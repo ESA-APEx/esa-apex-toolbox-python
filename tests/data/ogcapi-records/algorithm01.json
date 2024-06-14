@@ -1,0 +1,20 @@
+{
+    "id": "algorithm01",
+    "type": "Feature",
+    "conformsTo": [
+       "http://www.opengis.net/spec/ogcapi-records-1/1.0/req/record-core"
+    ],
+    "properties": {
+      "type": "apex_algorithm",
+      "title": "Algorithm One",
+      "description": "A first algorithm."
+    },
+    "links": [
+       {
+        "rel": "udp",
+        "type": "application/json",
+        "title": "openEO UDP",
+        "href": "https://esa-apex.test/udp/algorithm01.json"
+      }
+    ]
+  }

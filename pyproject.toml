@@ -19,11 +19,22 @@ classifiers = [
 ]
 keywords = ["ESA", "EO", "Earth observation", "openEO"]
 dependencies = [
+    "requests",
 ]
 
 [project.urls]
 Homepage = "https://github.com/ESA-APEx/esa-apex-toolbox-python"
 Issues = "https://github.com/ESA-APEx/esa-apex-toolbox-python/issues"
+
+[project.optional-dependencies]
+tests = [
+    "pytest",
+    "requests_mock",
+]
+dev = [
+    "pytest",
+    "requests_mock",
+]
 
 [tool.hatch.version]
 path = "src/esa_apex_toolbox/_about.py"
