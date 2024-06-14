@@ -8,6 +8,10 @@ from typing import Optional, Union
 import requests
 
 
+class LINK_REL:
+    UDP = "udp"
+
+
 def _load_json_resource(src: Union[dict, str, Path]) -> dict:
     """Load a JSON resource from a file or a string."""
     if isinstance(src, dict):
@@ -32,11 +36,38 @@ def _load_json_resource(src: Union[dict, str, Path]) -> dict:
         raise ValueError(f"Unsupported JSON resource type {type(src)}")
 
 
+class InvalidMetadataError(ValueError):
+    pass
+
+
+@dataclasses.dataclass(frozen=True)
+class UdpLink:
+    href: str
+    title: Optional[str] = None
+
+    @classmethod
+    def from_link_object(cls, data: dict) -> UdpLink:
+        """Parse a link object (dict/mapping) into a UdpLink object."""
+        if "rel" not in data:
+            raise InvalidMetadataError("Missing 'rel' attribute in link object")
+        if data["rel"] != LINK_REL.UDP:
+            raise InvalidMetadataError(f"Expected link with rel='udp' but got {data['rel']!r}")
+        if "type" in data and data["type"] != "application/json":
+            raise InvalidMetadataError(f"Expected link with type='application/json' but got {data['type']!r}")
+        if "href" not in data:
+            raise InvalidMetadataError("Missing 'href' attribute in link object")
+        return cls(
+            href=data["href"],
+            title=data.get("title"),
+        )
+
+
 @dataclasses.dataclass(frozen=True)
 class Algorithm:
     id: str
     title: Optional[str] = None
     description: Optional[str] = None
+    udp_link: Optional[UdpLink] = None
     # TODO more fields
 
     @classmethod
@@ -47,18 +78,27 @@ class Algorithm:
         """
         data = _load_json_resource(src)
 
-        # TODO dedicated exceptions for structure/schema violations
         if not data.get("type") == "Feature":
-            raise ValueError("Expected a GeoJSON Feature object")
+            raise InvalidMetadataError(f"Expected a GeoJSON 'Feature' object, but got type {data.get('type')!r}.")
         if "http://www.opengis.net/spec/ogcapi-records-1/1.0/req/record-core" not in data.get("conformsTo", []):
-            raise ValueError("Expected an OGC API - Records record object")
+            raise InvalidMetadataError(
+                f"Expected an 'OGC API - Records' record object, but got {data.get('conformsTo')!r}."
+            )
 
         properties = data.get("properties", {})
-        if not properties.get("type") == "apex_algorithm":
-            raise ValueError("Expected an APEX algorithm object")
+        if properties.get("type") != "apex_algorithm":
+            raise InvalidMetadataError(f"Expected an APEX algorithm object, but got type {properties.get('type')!r}.")
+
+        links = data.get("links", [])
+        udp_links = [UdpLink.from_link_object(link) for link in links if link.get("rel") == LINK_REL.UDP]
+        if len(udp_links) > 1:
+            raise InvalidMetadataError("Multiple UDP links found")
+        # TODO: is having a UDP link a requirement?
+        udp_link = udp_links[0] if udp_links else None
 
         return cls(
             id=data["id"],
             title=properties.get("title"),
             description=properties.get("description"),
+            udp_link=udp_link,
         )

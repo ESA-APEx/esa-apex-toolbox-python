@@ -13,7 +13,7 @@
        {
         "rel": "udp",
         "type": "application/json",
-        "title": "openEO UDP",
+        "title": "UDP One",
         "href": "https://esa-apex.test/udp/algorithm01.json"
       }
     ]
