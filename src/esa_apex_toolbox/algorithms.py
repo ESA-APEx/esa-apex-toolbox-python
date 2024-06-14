@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import json
 from pathlib import Path
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import requests
 
@@ -102,3 +102,38 @@ class Algorithm:
             description=properties.get("description"),
             udp_link=udp_link,
         )
+
+
+class GithubAlgorithmRepository:
+    """
+    GitHub based algorithm repository.
+    """
+
+    # TODO: caching
+
+    def __init__(self, owner: str, repo: str, folder: str = "", branch: str = "main"):
+        self.owner = owner
+        self.repo = repo
+        self.folder = folder
+        self.branch = branch
+        self._session = requests.Session()
+
+    def _list_files(self):
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/contents/{self.folder}".strip("/")
+        resp = self._session.get(url, headers={"Accept": "application/vnd.github.object+json"})
+        resp.raise_for_status()
+        listing = resp.json()
+        assert listing["type"] == "dir"
+        for item in listing["entries"]:
+            if item["type"] == "file":
+                yield item
+
+    def list_algorithms(self) -> List[str]:
+        # TODO: method to list names vs method to list parsed Algorithm objects?
+        return [item["name"] for item in self._list_files()]
+
+    def get_algorithm(self, name: str) -> Algorithm:
+        # TODO: get url from listing from API request, instead of hardcoding this raw url?
+        url = f"https://raw.githubusercontent.com/{self.owner}/{self.repo}/{self.branch}/{self.folder}/{name}"
+        # TODO: how to make sure GitHub URL is requested with additional headers?
+        return Algorithm.from_ogc_api_record(url)

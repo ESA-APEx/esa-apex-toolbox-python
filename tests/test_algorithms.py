@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from esa_apex_toolbox.algorithms import Algorithm, InvalidMetadataError, UdpLink
+from esa_apex_toolbox.algorithms import (
+    Algorithm,
+    GithubAlgorithmRepository,
+    InvalidMetadataError,
+    UdpLink,
+)
 
 DATA_ROOT = Path(__file__).parent / "data"
 
@@ -173,4 +178,33 @@ class TestAlgorithm:
         assert algorithm.udp_link == UdpLink(
             href="https://esa-apex.test/udp/algorithm01.json",
             title="UDP One",
+        )
+
+
+class TestGithubAlgorithmRepository:
+    @pytest.fixture
+    def repo(self) -> GithubAlgorithmRepository:
+        # TODO: avoid depending on an actual GitHub repository. Mock it instead?
+        #       Or run this as an integration test?
+        return GithubAlgorithmRepository(
+            owner="ESA-APEx",
+            repo="apex_algorithms",
+            folder="algorithm_catalog",
+        )
+
+    def test_list_algorithms(self, repo):
+        assert repo.list_algorithms() == [
+            "worldcereal.json",
+        ]
+
+    def test_get_algorithm(self, repo):
+        algorithm = repo.get_algorithm("worldcereal.json")
+        assert algorithm == Algorithm(
+            id="worldcereal_maize",
+            title="ESA worldcereal global maize detector",
+            description="A maize detection algorithm.",
+            udp_link=UdpLink(
+                href="https://github.com/ESA-APEX/apex_algorithms/blob/main/openeo_udp/worldcereal_inference.json",
+                title="openEO UDP",
+            ),
         )
