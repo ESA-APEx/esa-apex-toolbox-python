@@ -9,7 +9,7 @@ import requests
 
 
 class LINK_REL:
-    UDP = "udp"
+    UDP = "openeo-process"
 
 
 def _load_json_resource(src: Union[dict, str, Path]) -> dict:
@@ -51,7 +51,7 @@ class UdpLink:
         if "rel" not in data:
             raise InvalidMetadataError("Missing 'rel' attribute in link object")
         if data["rel"] != LINK_REL.UDP:
-            raise InvalidMetadataError(f"Expected link with rel='udp' but got {data['rel']!r}")
+            raise InvalidMetadataError(f"Expected link with rel='{LINK_REL.UDP}' but got {data['rel']!r}")
         if "type" in data and data["type"] != "application/json":
             raise InvalidMetadataError(f"Expected link with type='application/json' but got {data['type']!r}")
         if "href" not in data:
@@ -68,6 +68,8 @@ class Algorithm:
     title: Optional[str] = None
     description: Optional[str] = None
     udp_link: Optional[UdpLink] = None
+    license: Optional[str] = None
+    organization: Optional[str] = None
     # TODO more fields
 
     @classmethod
@@ -96,11 +98,18 @@ class Algorithm:
         # TODO: is having a UDP link a requirement?
         udp_link = udp_links[0] if udp_links else None
 
+        pis = [ c for c in properties.get("contacts",[]) if "principal investigator" in c.get("roles",[]) ]
+        pi_org = pis[0].get("organization", None) if pis else None
+
+        service_license = data.get("license",None)
+
         return cls(
             id=data["id"],
             title=properties.get("title"),
             description=properties.get("description"),
             udp_link=udp_link,
+            license=service_license,
+            organization = pi_org
         )
 
 
