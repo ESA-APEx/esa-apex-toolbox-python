@@ -10,6 +10,7 @@ import requests
 
 class LINK_REL:
     UDP = "openeo-process"
+    SERVICE = "service"
 
 
 def _load_json_resource(src: Union[dict, str, Path]) -> dict:
@@ -61,6 +62,28 @@ class UdpLink:
             title=data.get("title"),
         )
 
+@dataclasses.dataclass(frozen=True)
+class ServiceLink:
+    href: str
+    title: Optional[str] = None
+
+    @classmethod
+    def from_link_object(cls, data: dict) -> ServiceLink:
+        """Parse a link object (dict/mapping) into a UdpLink object."""
+        if "rel" not in data:
+            raise InvalidMetadataError("Missing 'rel' attribute in link object")
+        if data["rel"] != LINK_REL.SERVICE:
+            raise InvalidMetadataError(f"Expected link with rel='{LINK_REL.SERVICE}' but got {data['rel']!r}")
+        if "href" not in data:
+            raise InvalidMetadataError("Missing 'href' attribute in link object")
+        return cls(
+            href=data["href"],
+            title=data.get("title"),
+        )
+
+    def __str__(self):
+        return self.title or self.href
+
 
 @dataclasses.dataclass(frozen=True)
 class Algorithm:
@@ -68,6 +91,7 @@ class Algorithm:
     title: Optional[str] = None
     description: Optional[str] = None
     udp_link: Optional[UdpLink] = None
+    service_links: List[ServiceLink] = None
     license: Optional[str] = None
     organization: Optional[str] = None
     # TODO more fields
@@ -95,19 +119,25 @@ class Algorithm:
         udp_links = [UdpLink.from_link_object(link) for link in links if link.get("rel") == LINK_REL.UDP]
         if len(udp_links) > 1:
             raise InvalidMetadataError("Multiple UDP links found")
-        # TODO: is having a UDP link a requirement?
+        # TODO: is having a UDP link a requirement? => No, it can also be an application package
         udp_link = udp_links[0] if udp_links else None
+
+        service_links = [ServiceLink.from_link_object(link) for link in links if link.get("rel") == LINK_REL.SERVICE]
+        if len(udp_links) == 0:
+            raise InvalidMetadataError("No service links found, the algorithm requires at least one valid service that is known to execute it.")
+
+
 
         pis = [ c for c in properties.get("contacts",[]) if "principal investigator" in c.get("roles",[]) ]
         pi_org = pis[0].get("organization", None) if pis else None
 
         service_license = data.get("license",None)
-
         return cls(
             id=data["id"],
             title=properties.get("title"),
             description=properties.get("description"),
             udp_link=udp_link,
+            service_links=service_links,
             license=service_license,
             organization = pi_org
         )
