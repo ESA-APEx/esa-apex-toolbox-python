@@ -45,7 +45,7 @@ class TestUdpLink:
             "rel": "self",
             "href": "https://esa-apex.test/udp/basic.json",
         }
-        with pytest.raises(InvalidMetadataError, match="Expected link with rel='udp'"):
+        with pytest.raises(InvalidMetadataError, match="Expected link with rel='openeo-process'"):
             _ = UdpLink.from_link_object(data)
 
     def test_from_link_object_no_href(self):
