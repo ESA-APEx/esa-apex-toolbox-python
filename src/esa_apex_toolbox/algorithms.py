@@ -62,6 +62,7 @@ class UdpLink:
             title=data.get("title"),
         )
 
+
 @dataclasses.dataclass(frozen=True)
 class ServiceLink:
     href: str
@@ -123,15 +124,15 @@ class Algorithm:
         udp_link = udp_links[0] if udp_links else None
 
         service_links = [ServiceLink.from_link_object(link) for link in links if link.get("rel") == LINK_REL.SERVICE]
-        if len(udp_links) == 0:
-            raise InvalidMetadataError("No service links found, the algorithm requires at least one valid service that is known to execute it.")
+        if len(service_links) == 0:
+            raise InvalidMetadataError(
+                "No service links found, the algorithm requires at least one valid service that is known to execute it."
+            )
 
-
-
-        pis = [ c for c in properties.get("contacts",[]) if "principal investigator" in c.get("roles",[]) ]
+        pis = [c for c in properties.get("contacts", []) if "principal investigator" in c.get("roles", [])]
         pi_org = pis[0].get("organization", None) if pis else None
 
-        service_license = data.get("license",None)
+        service_license = data.get("license", None)
         return cls(
             id=data["id"],
             title=properties.get("title"),
@@ -139,7 +140,7 @@ class Algorithm:
             udp_link=udp_link,
             service_links=service_links,
             license=service_license,
-            organization = pi_org
+            organization=pi_org,
         )
 
 
