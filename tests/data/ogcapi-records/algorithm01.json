@@ -11,10 +11,15 @@
     },
     "links": [
        {
-        "rel": "udp",
+        "rel": "openeo-process",
         "type": "application/json",
         "title": "UDP One",
         "href": "https://esa-apex.test/udp/algorithm01.json"
-      }
+      },{
+        "rel": "service",
+        "type": "application/json",
+        "title": "openEO service",
+        "href": "https://openeo.test/"
+    }
     ]
   }

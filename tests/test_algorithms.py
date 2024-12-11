@@ -7,6 +7,7 @@ from esa_apex_toolbox.algorithms import (
     Algorithm,
     GithubAlgorithmRepository,
     InvalidMetadataError,
+    ServiceLink,
     UdpLink,
 )
 
@@ -74,6 +75,9 @@ class TestAlgorithm:
             "properties": {
                 "type": "apex_algorithm",
             },
+            "links": [
+                {"rel": "service", "href": "https://openeo.test/"},
+            ],
         }
         algorithm = Algorithm.from_ogc_api_record(data)
         assert algorithm.id == "minimal"
@@ -132,7 +136,13 @@ class TestAlgorithm:
                     "type": "application/json",
                     "title": "Basic UDP",
                     "href": "https://esa-apex.test/udp/basic.json",
-                }
+                },
+                {
+                    "rel": "service",
+                    "type": "application/json",
+                    "title": "openEO service",
+                    "href": "https://openeo.test/",
+                },
             ],
         }
         algorithm = Algorithm.from_ogc_api_record(data)
@@ -143,6 +153,7 @@ class TestAlgorithm:
             href="https://esa-apex.test/udp/basic.json",
             title="Basic UDP",
         )
+        assert algorithm.service_links == [ServiceLink(href="https://openeo.test/", title="openEO service")]
 
     @pytest.mark.parametrize("path_type", [str, Path])
     def test_from_ogc_api_record_path(self, path_type):
@@ -155,6 +166,7 @@ class TestAlgorithm:
             href="https://esa-apex.test/udp/algorithm01.json",
             title="UDP One",
         )
+        assert algorithm.service_links == [ServiceLink(href="https://openeo.test/", title="openEO service")]
 
     def test_from_ogc_api_record_str(self):
         dump = (DATA_ROOT / "ogcapi-records/algorithm01.json").read_text()
@@ -166,6 +178,7 @@ class TestAlgorithm:
             href="https://esa-apex.test/udp/algorithm01.json",
             title="UDP One",
         )
+        assert algorithm.service_links == [ServiceLink(href="https://openeo.test/", title="openEO service")]
 
     def test_from_ogc_api_record_url(self, requests_mock):
         url = "https://esa-apex.test/algorithms/a1.json"
@@ -179,6 +192,7 @@ class TestAlgorithm:
             href="https://esa-apex.test/udp/algorithm01.json",
             title="UDP One",
         )
+        assert algorithm.service_links == [ServiceLink(href="https://openeo.test/", title="openEO service")]
 
 
 class TestGithubAlgorithmRepository:
@@ -186,6 +200,7 @@ class TestGithubAlgorithmRepository:
     def repo(self) -> GithubAlgorithmRepository:
         # TODO: avoid depending on an actual GitHub repository. Mock it instead?
         #       Or run this as an integration test?
+        #       https://github.com/ESA-APEx/esa-apex-toolbox-python/issues/4
         return GithubAlgorithmRepository(
             owner="ESA-APEx",
             repo="apex_algorithms",
@@ -193,18 +208,25 @@ class TestGithubAlgorithmRepository:
         )
 
     def test_list_algorithms(self, repo):
-        assert repo.list_algorithms() == [
-            "worldcereal.json",
-        ]
+        listing = repo.list_algorithms()
+        assert listing
+        assert all(re.fullmatch(r"[a-z0-9_]+\.json", item) for item in listing)
 
     def test_get_algorithm(self, repo):
-        algorithm = repo.get_algorithm("worldcereal.json")
+        algorithm = repo.get_algorithm("max_ndvi_composite.json")
         assert algorithm == Algorithm(
-            id="worldcereal_maize",
-            title="ESA worldcereal global maize detector",
-            description="A maize detection algorithm.",
+            id="max_ndvi_composite",
+            title="Max NDVI Composite based on Sentinel-2 data",
+            description="A compositing algorithm for Sentinel-2 L2A data, ranking observations by their maximum NDVI.",
             udp_link=UdpLink(
-                href="https://github.com/ESA-APEX/apex_algorithms/blob/main/openeo_udp/worldcereal_inference.json",
-                title="openEO UDP",
+                href="https://raw.githubusercontent.com/ESA-APEx/apex_algorithms/main/openeo_udp/examples/max_ndvi_composite/max_ndvi_composite.json",
+                title="openEO Process Definition",
             ),
+            organization="VITO",
+            service_links=[
+                ServiceLink(
+                    href="https://openeofed.dataspace.copernicus.eu",
+                    title="CDSE openEO federation",
+                )
+            ],
         )
