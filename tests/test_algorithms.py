@@ -16,7 +16,7 @@ DATA_ROOT = Path(__file__).parent / "data"
 class TestUdpLink:
     def test_from_link_object_basic(self):
         data = {
-            "rel": "udp",
+            "rel": "openeo-process",
             "href": "https://esa-apex.test/udp/basic.json",
         }
         link = UdpLink.from_link_object(data)
@@ -25,7 +25,7 @@ class TestUdpLink:
 
     def test_from_link_object_with_title(self):
         data = {
-            "rel": "udp",
+            "rel": "openeo-process",
             "href": "https://esa-apex.test/udp/basic.json",
             "title": "My basic UDP",
         }
@@ -50,14 +50,14 @@ class TestUdpLink:
 
     def test_from_link_object_no_href(self):
         data = {
-            "rel": "udp",
+            "rel": "openeo-process",
         }
         with pytest.raises(InvalidMetadataError, match="Missing 'href' attribute"):
             _ = UdpLink.from_link_object(data)
 
     def test_from_link_object_wrong_type(self):
         data = {
-            "rel": "udp",
+            "rel": "openeo-process",
             "href": "https://esa-apex.test/udp/basic.json",
             "type": "application/xml",
         }
@@ -128,7 +128,7 @@ class TestAlgorithm:
             },
             "links": [
                 {
-                    "rel": "udp",
+                    "rel": "openeo-process",
                     "type": "application/json",
                     "title": "Basic UDP",
                     "href": "https://esa-apex.test/udp/basic.json",
